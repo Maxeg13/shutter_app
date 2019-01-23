@@ -26,9 +26,11 @@ protected:
     void resizeEvent(QResizeEvent *event) override;
 
 private slots:
+    void oneSend();
     void newScreenshot();
     void saveScreenshot();
     void shootScreen();
+    void COMInit();
     void updateCheckBox();
 
 private:

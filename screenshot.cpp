@@ -1,10 +1,15 @@
-
+//ask about the port baudrate
 #include <QtWidgets>
-
+#include <QtSerialPort>
 #include "screenshot.h"
 
 QTimer timer;
+QSerialPort port;
 QImage imgh;
+QLineEdit* serial_le;
+QLineEdit* command_le;
+
+bool serial_inited;
 
 int intens(QImage& img)
 {
@@ -19,6 +24,9 @@ int intens(QImage& img)
 Screenshot::Screenshot()
     :  screenshotLabel(new QLabel(this))
 {
+    serial_le=new QLineEdit("COM3");
+    serial_le->setMaximumWidth(100);
+
     screenshotLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     screenshotLabel->setAlignment(Qt::AlignCenter);
 
@@ -38,31 +46,44 @@ Screenshot::Screenshot()
 
 //    hideThisWindowCheckBox = new QCheckBox(tr("Hide This Window"), optionsGroupBox);
 
+    QLabel* label_com=new QLabel("port name");
+
     QGridLayout *optionsGroupBoxLayout = new QGridLayout(optionsGroupBox);
     optionsGroupBoxLayout->addWidget(new QLabel(tr("size:"), this), 0, 0);
     optionsGroupBoxLayout->addWidget(sizeSpinBox, 0, 1);
+    optionsGroupBoxLayout->addWidget(label_com, 1, 0);
+    optionsGroupBoxLayout->addWidget(serial_le, 1, 1);
+
+    connect(serial_le,SIGNAL(returnPressed()),this,SLOT(COMInit()));
+
 //    optionsGroupBoxLayout->addWidget(hideThisWindowCheckBox, 1, 0, 1, 2);
 
     mainLayout->addWidget(optionsGroupBox);
 
-    QHBoxLayout *buttonsLayout = new QHBoxLayout;
-    newScreenshotButton = new QPushButton(tr("New Screenshot"), this);
-    connect(newScreenshotButton, &QPushButton::clicked, this, &Screenshot::newScreenshot);
-    buttonsLayout->addWidget(newScreenshotButton);
-    QPushButton *saveScreenshotButton = new QPushButton(tr("Save Screenshot"), this);
-    connect(saveScreenshotButton, &QPushButton::clicked, this, &Screenshot::saveScreenshot);
-    buttonsLayout->addWidget(saveScreenshotButton);
+    QHBoxLayout *commandsLayout = new QHBoxLayout;
+    command_le=new QLineEdit("asssb");
+    commandsLayout->addWidget(command_le);
+    mainLayout->addLayout(commandsLayout);
+
+    connect(command_le, SIGNAL(returnPressed()),this,SLOT(oneSend()));
+//    QHBoxLayout *buttonsLayout = new QHBoxLayout;
+//    newScreenshotButton = new QPushButton(tr("New Screenshot"), this);
+//    connect(newScreenshotButton, &QPushButton::clicked, this, &Screenshot::newScreenshot);
+//    buttonsLayout->addWidget(newScreenshotButton);
+//    QPushButton *saveScreenshotButton = new QPushButton(tr("Save Screenshot"), this);
+//    connect(saveScreenshotButton, &QPushButton::clicked, this, &Screenshot::saveScreenshot);
+//    buttonsLayout->addWidget(saveScreenshotButton);
 //    QPushButton *quitScreenshotButton = new QPushButton(tr("Quit"), this);
 //    quitScreenshotButton->setShortcut(Qt::CTRL + Qt::Key_Q);
 //    connect(quitScreenshotButton, &QPushButton::clicked, this, &QWidget::close);
 //    buttonsLayout->addWidget(quitScreenshotButton);
-    buttonsLayout->addStretch();
-    mainLayout->addLayout(buttonsLayout);
+//    buttonsLayout->addStretch();
+//    mainLayout->addLayout(buttonsLayout);
 
     shootScreen();
     sizeSpinBox->setValue(10);
 
-    setWindowTitle(tr("SHUTTER CONTROL"));
+    setWindowTitle(tr("SHUTTER APP"));
 //    resize(200, 200);
     this->setMinimumSize(QSize(320,200));
 
@@ -77,6 +98,43 @@ void Screenshot::resizeEvent(QResizeEvent * /* event */)
     scaledSize.scale(screenshotLabel->size(), Qt::KeepAspectRatio);
     if (!screenshotLabel->pixmap() || scaledSize != screenshotLabel->pixmap()->size())
         updateScreenshotLabel();
+}
+
+void Screenshot::oneSend()
+{
+    QByteArray ba;
+    QString str=serial_le->text();
+    ba=str.toUtf8();
+    ba.push_back(25);
+    ba.push_back('a');
+
+    port.write(ba);
+}
+
+void Screenshot::COMInit()
+{
+    serial_inited=1;
+    QString qstr=serial_le->text();
+    std::string str1=qstr.toUtf8().constData();
+    std::wstring str(str1.begin(),str1.end());
+    //    hSerial=new Serial;
+    //    port=new QSerialPort;
+    port.setPortName(qstr);
+    port.setBaudRate(38400);
+//    if(port.open(QIODevice::WriteOnly))
+//    {
+//        QString message = tr("com port is successfully opened");
+//        statusBar()->showMessage(message);
+//    }
+//    else
+//    {
+//        QString message = tr("com port is not opened");
+//        statusBar()->showMessage(message);
+//    }
+
+
+    //    hSerial->InitCOM(str.c_str());//was L"COM5"
+    serial_le->setDisabled(true);
 }
 
 void Screenshot::newScreenshot()
@@ -144,7 +202,7 @@ void Screenshot::shootScreen()
     }
     sumh=sum;
 
-    newScreenshotButton->setDisabled(false);
+//    newScreenshotButton->setDisabled(false);
 //    if (hideThisWindowCheckBox->isChecked())
 //        show();
 }

@@ -2,6 +2,8 @@ QT += widgets
 #requires(qtConfig(filedialog))
 CONFIG += C++11
 
+QT += serialport
+
 RC_FILE = myapp.rc
 
 TARGET = shutter_control
